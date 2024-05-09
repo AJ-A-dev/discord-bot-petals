@@ -1,11 +1,8 @@
 import discord
 import asyncio
-# import requests
-# import json
 
 from rater import Rater
 from message_history_handler import MessageHistoryHandler, MessageHistoryHandlerOllama
-# from performane_tracker import PerformanceTracker
 # import ollama
 # from transformers import AutoTokenizer
 # from petals import AutoDistributedModelForCausalLM
