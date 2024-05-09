@@ -39,7 +39,7 @@ class MessageHistoryHandler:
                         object.add_message(robot_message, is_robot=True) # robot message
                         break
         else: # its not a reply
-            tmp_message_history = MessageHistoryOllama()
+            tmp_message_history = MessageHistory()
             tmp_message_history.add_message(human_message, is_robot=False)
             tmp_message_history.add_message(robot_message, is_robot=True)
             self.message_histories.append(tmp_message_history)

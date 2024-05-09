@@ -1,16 +1,11 @@
 import discord
 import asyncio
-# import requests
-# import json
 
 from rater import Rater
 from message_history_handler import MessageHistoryHandler, MessageHistoryHandlerOllama
-# from performane_tracker import PerformanceTracker
-# import ollama
-# from transformers import AutoTokenizer
-# from petals import AutoDistributedModelForCausalLM
-# from logger import performance_logger
-# from chat_bots.petals_bot import PetalsBot
+from transformers import AutoTokenizer
+from petals import AutoDistributedModelForCausalLM
+from chat_bots.petals_bot import PetalsBot
 from chat_bots.ollama_bot import OllamaBot
 
 """
@@ -19,10 +14,10 @@ petals initialization
 # Choose any model available at https://health.petals.dev
 model_name = "petals-team/StableBeluga2"  # This one is fine-tuned Llama 2 (70B)
 
-# # Connect to a distributed network hosting model layers
-# tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, add_bos_token=False)
-# model = AutoDistributedModelForCausalLM.from_pretrained(model_name)
-# fake_token = tokenizer("^")["input_ids"][0]  # Workaround to make tokenizer.decode() keep leading spaces
+# Connect to a distributed network hosting model layers
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, add_bos_token=False)
+model = AutoDistributedModelForCausalLM.from_pretrained(model_name)
+fake_token = tokenizer("^")["input_ids"][0]  # Workaround to make tokenizer.decode() keep leading spaces
 
 
 """
@@ -47,9 +42,9 @@ class MyClient(discord.Client):
         super().__init__(*args, **kwargs)
         self.generation = True # can turn this off to stop all generating
         # Pass `self` to give the bot classes a reference to the client
-        # self.petals_bot = PetalsBot(self, tokenizer, model, message_history_handler)
-        self.ollama_7B_bot = OllamaBot(self, message_history_handler_ollama, domain, "Ollama 7B", "llama7B_with_context")
-        self.ollama_70B_bot = OllamaBot(self, message_history_handler_ollama, domain, "Ollama 70B", "llama70B_with_context")
+        self.petals_bot = PetalsBot(self, tokenizer, model, message_history_handler)
+        # self.ollama_7B_bot = OllamaBot(self, message_history_handler_ollama, domain, "Ollama 7B", "llama7B_with_context")
+        # self.ollama_70B_bot = OllamaBot(self, message_history_handler_ollama, domain, "Ollama 70B", "llama70B_with_context")
     async def on_ready(self):
         print('Logged on as', self.user)
 
@@ -70,15 +65,10 @@ class MyClient(discord.Client):
         await message.channel.send("Generation can start again")
 
     async def run_chatbots(self, message, inputs_discord):
-        # Schedule both tasks to run concurrently
-        task1 = self.ollama_7B_bot.generate_response(message, inputs_discord)
-        task2 = self.ollama_70B_bot.generate_response(message, inputs_discord)
-
-        # Wait for both tasks to complete and retrieve their results
-        ollama_7B_result, ollama_70B_result = await asyncio.gather(task1, task2)
+        petals_result = await self.petals_bot.generate_response(message, inputs_discord)
 
         # Now ollama_result and petals_result contain the return values of run_ollama and run_petals respectively
-        return ollama_7B_result, ollama_70B_result      
+        return petals_result
 
     async def run_ollama_7B(self, message, inputs_discord, name):
         return await self.ollama_7B_bot.generate_response(message, inputs_discord)
@@ -117,9 +107,8 @@ class MyClient(discord.Client):
                 inputs_discord = inputs_discord[1:] 
 
             # running the actual functions
-            ollama_response, petals_response = await self.run_chatbots(message, inputs_discord)
+            await self.run_chatbots(message, inputs_discord)
             
-            await answer_rater.add_new_question_answer(message, ollama_response, petals_response, client)
 
         elif inputs_discord == "/breakall": # command to stop all generating
             generation = False

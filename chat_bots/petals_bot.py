@@ -26,7 +26,6 @@ class PetalsBot(ChatbotInterface):
 
         with self.model.inference_session(max_length=512) as sess:
             prefix = f"{context}Human: {prompt}\nFriendly AI:"
-            print("prefix", prefix)
             prefix = self.tokenizer(prefix, return_tensors="pt")["input_ids"]
 
             tracker = PerformanceTracker() #initalize performance tracker
